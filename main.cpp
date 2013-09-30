@@ -8,28 +8,26 @@
 #define COLOR_DARKBLUE 21
 
 int init_board();
-void show_board();
+void show_board(WINDOW* win);
 
 Piece board[64];
 
 int main(){
+    init_color(COLOR_DARKBLUE, 0, 0, 750);
+    init_color(COLOR_LIGHTGRAY, 500, 500, 500);
     setlocale(LC_ALL, ""); 
-    
     init_board();
-    for(int i = 0; i < 64; i++){
-        if(board[i].type == (PAWN | BLACK) || board[i].type == PAWN){
-            printf("%d\n", board[i].color);
-        }
-    }
     initscr();
+    WINDOW* board_win = newwin(12, 24, (LINES - 12) / 2, (COLS - 24) / 2);
+    box(board_win, 0, 0);
     cbreak();
     start_color();
-    
-    show_board();
+    show_board(board_win);
     //display_board();
-    
-    
-    refresh();
+    while(true){
+        show_board(board_win);
+        wrefresh(board_win);
+    }
     getchar();
     endwin();
     return 0;
@@ -91,7 +89,7 @@ int init_board(){
     return 0;
 }
 
-void show_board(){
+void show_board(WINDOW* win){
     init_color(COLOR_DARKBLUE, 0, 0, 750);
     init_color(COLOR_LIGHTGRAY, 500, 500, 500);
     init_pair(1, COLOR_BLACK, COLOR_DARKBLUE);
@@ -99,7 +97,7 @@ void show_board(){
     init_pair(3, COLOR_WHITE, COLOR_DARKBLUE);
     init_pair(4, COLOR_WHITE, COLOR_LIGHTGRAY);
     for(int i = 0; i < 64; i++){
-        attron(COLOR_PAIR(((i / 8 + i % 8 + 1) % 2) + 1 + 2 * board[i].color/COLOR_WHITE));
-        mvprintw(i / 8, 2 * (i % 8), "%s ", (char*)&(board[i].icon));
+        wattron(win, COLOR_PAIR(((i / 8 + i % 8 + 1) % 2) + 1 + 2 * board[i].color/COLOR_WHITE));
+        mvwprintw(win, i / 8 + 2, 2 * (i % 8) + 4, "%s ", (char*)&(board[i].icon));
     }
 }
