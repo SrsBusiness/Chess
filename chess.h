@@ -19,3 +19,4 @@ typedef struct Piece{
     Piece() : icon(32){
     }
 } Piece;
+
