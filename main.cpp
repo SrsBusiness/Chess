@@ -4,6 +4,8 @@
 #include <string.h>
 #include <panel.h>
 #include "chess.h"
+#include "multiplayer.h"
+#include <sys/socket.h>
 
 // Color
 #define COLOR_LIGHTGRAY 21
@@ -17,6 +19,7 @@ int init_board();
 void show_board(WINDOW* win);
 void refresh_all();
 int move(char* str, int str_length);
+void show_prompt(void);
 
 Piece board[64];
 WINDOW* board_win;
@@ -25,8 +28,42 @@ WINDOW* commandline_win;
 PANEL* board_panel;
 PANEL* cmdlnborder_panel;
 PANEL* commandline_panel;
+int turn = 0;
 
-int main(){
+bool multiplayer = false;
+int host = 0;
+int sockfd, connfd;
+
+int main(int argc, char *argv[]){
+    if (argc == 2) {
+        if (strcmp(argv[1],"-m") == 0) {
+            multiplayer = true;
+            host = 1;
+            if ((sockfd = setup_socket()) == 0) {
+                fprintf(stderr, "setup_socket: unable to create socket\n");
+                return 2;
+            }
+            if (socket_bind(sockfd) == false) {
+                fprintf(stderr, "socket_bind: unable to bind to port\n");
+                return 2;
+            }
+            connfd = accept_connection(sockfd);
+        }
+    } else if (argc == 3) {
+        if (strcmp(argv[1],"-m") == 0) {
+            multiplayer = true;
+            host = 0;
+            if ((connfd = setup_socket()) == 0) {
+                fprintf(stderr, "setup_socket: unable to create socket\n");
+                return 2;
+            }
+            if ((socket_connect(connfd, argv[2])) == false) {
+                fprintf(stderr, "socket_connect: unable to connect to host\n");
+                return 2;
+            }
+        }
+    }
+
     setlocale(LC_ALL, ""); 
     init_board();
     initscr();
@@ -61,19 +98,47 @@ int main(){
     doupdate();
     char str[80];
     while(true){
-        mvwprintw(commandline_win, lines - (BOARD_SIZE + 
-            (lines - BOARD_SIZE) / 4) - 3, 0, ">>> ");
-        mvwgetstr(commandline_win, lines - (BOARD_SIZE + 
-            (lines - BOARD_SIZE) / 4) - 3, 4, str);
+        if (multiplayer) {
+            if ((turn+host)%2 == 1) {
+                show_prompt();
+                mvwgetstr(commandline_win, lines - (BOARD_SIZE + 
+                    (lines - BOARD_SIZE) / 4) - 3, 4, str);
+                send(connfd, str, 80, 0);
+            } else {
+                memset(str, 0, 80 * sizeof(char));
+                recv(connfd, str, 80, 0);
+                if (*str == '\0') {
+                    clear();
+                    endwin();
+                    fprintf(stderr, "error: disconnect\n");
+                    return 2;
+                }
+                strncat(str, "\n", 80);
+                show_prompt();
+                mvwaddstr(commandline_win, lines - (BOARD_SIZE + 
+                    (lines - BOARD_SIZE) / 4) - 3, 4, str);
+            }
+        } else {
+            show_prompt();
+            mvwgetstr(commandline_win, lines - (BOARD_SIZE + 
+                (lines - BOARD_SIZE) / 4) - 3, 4, str);
+        }
         int len = 0;
         while(*(str + len) != 0)
             len++;
         
-        if(!move(str, len))
+        if(!move(str, len)) {
             show_board(board_win);
+            turn++;
+        }
     }
     endwin();
     return 0;
+}
+
+void show_prompt(void) {
+    mvwprintw(commandline_win, LINES - (BOARD_SIZE + 
+        (LINES - BOARD_SIZE) / 4) - 3, 0, ">>> ");
 }
 
 void show_board(WINDOW* win){
@@ -90,11 +155,6 @@ void show_board(WINDOW* win){
                     (board[i].color == COLOR_WHITE)));
         mvwprintw(win, i / 8 + 2, 2 * (i % 8) + 4, "%s ", 
                 (char*)&(board[i].icon));
-        /*init_pair(1, board[i].type & BLACK ? COLOR_BLACK : COLOR_WHITE,
-                (i / 8 + i % 8 + 1) % 2 + 20);
-        mvwprintw(win, i / 8 + 2, 2 * (i % 8) + 4, "%s ", 
-                (char*)&(board[i].icon));
-        */
     }
     wattron(win, COLOR_PAIR(5));
     for(int i = 0; i < 8; i++){
