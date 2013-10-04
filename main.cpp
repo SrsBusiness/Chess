@@ -49,7 +49,7 @@ int main(int argc, char *argv[]){
             } else {
                 host = 0;
                 connfd = sockfd;
-                printf("we connected to someone!");
+                printf("we connected to someone!\n");
             }
         }
     }
@@ -62,6 +62,7 @@ int main(int argc, char *argv[]){
             recv(connfd, str, 6, 0);
             if (strcmp(str, ping) == 0) {
                 send(connfd, pong, 6, 0);
+                printf("we connected to someone!\n");
                 ack = true;
             }
         }
