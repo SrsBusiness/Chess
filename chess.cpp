@@ -115,7 +115,7 @@ char same_color(char start, char end){
 }
 
 char distance(char start, char end){
-    return (char)(pow(start % 8 - end % 8, 2) + pow(start / 8 - end / 8, 2));
+    return (char)(pow((double)(start % 8 - end % 8), 2) + pow((double)(start / 8 - end / 8), 2));
 }
 
 char can_capture(Move m){
