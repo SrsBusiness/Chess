@@ -38,32 +38,36 @@ int main(int argc, char *argv[]){
     if (argc == 2) {
         if (strcmp(argv[1],"-m") == 0) {
             multiplayer = true;
-            host = 1;
-            if ((sockfd = setup_socket()) < 0) {
-                fprintf(stderr, "setup_socket: unable to create socket\n");
-                return 2;
-            }
-            if (socket_bind(sockfd) == false) {
-                fprintf(stderr, "socket_bind: unable to bind to port\n");
-                return 2;
-            }
-            connfd = accept_connection(sockfd);
-        }
-    } else if (argc == 3) {
-        if (strcmp(argv[1],"-m") == 0) {
-            multiplayer = true;
-            host = 0;
-            if ((connfd = setup_socket()) < 0) {
-                fprintf(stderr, "setup_socket: unable to create socket\n");
-                return 2;
-            }
-            if ((socket_connect(connfd, argv[2])) == false) {
-                fprintf(stderr, "socket_connect: unable to connect to host\n");
-                return 2;
+            if ((sockfd = socket_search()) == -1) {
+                host = 1;
+                sockfd = setup_socket();
+                if (socket_bind(sockfd) == false) {
+                    fprintf(stderr, "socket_bind: unable to bind to port\n");
+                    return 2;
+                }
+                connfd = accept_connection(sockfd);
+            } else {
+                host = 0;
+                connfd = sockfd;
+                printf("we connected to someone!");
             }
         }
     }
 
+    if (multiplayer && host) {
+        bool ack = false;
+        char str[6];
+        while (!ack) {
+            memset(str, 0, 6 * sizeof(char));
+            recv(connfd, str, 6, 0);
+            if (strcmp(str, ping) == 0) {
+                send(connfd, pong, 6, 0);
+                ack = true;
+            }
+        }
+    }
+
+    return 0;
     setlocale(LC_ALL, ""); 
     init_board();
     initscr();
