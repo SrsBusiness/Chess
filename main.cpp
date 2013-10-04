@@ -39,7 +39,7 @@ int main(int argc, char *argv[]){
         if (strcmp(argv[1],"-m") == 0) {
             multiplayer = true;
             host = 1;
-            if ((sockfd = setup_socket()) == 0) {
+            if ((sockfd = setup_socket()) < 0) {
                 fprintf(stderr, "setup_socket: unable to create socket\n");
                 return 2;
             }
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]){
         if (strcmp(argv[1],"-m") == 0) {
             multiplayer = true;
             host = 0;
-            if ((connfd = setup_socket()) == 0) {
+            if ((connfd = setup_socket()) < 0) {
                 fprintf(stderr, "setup_socket: unable to create socket\n");
                 return 2;
             }

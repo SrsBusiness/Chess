@@ -17,13 +17,13 @@ int setup_socket(void) {
     hints.ai_flags = AI_PASSIVE;
 
     if (getaddrinfo(NULL, LISTENING_PORT, &hints, &res) == -1) {
-        return 0;
+        return -1;
     }
     sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
     int yes=1;
     if (setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) == -1) {
-        return 0;
+        return -1;
     }
     return sockfd;
 }
