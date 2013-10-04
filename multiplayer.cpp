@@ -36,10 +36,10 @@ int setup_socket(void) {
     return sockfd;
 }
 
-unsigned long long active_interface(void) {
+struct addr_mask active_interface(void) {
     struct ifaddrs *ifaddr, *ifa;
     int family, flags;
-    unsigned long long res = 0;
+    struct addr_mask res = {0, 0};
 
     if (getifaddrs(&ifaddr) == -1) {
         perror("getifaddrs");
@@ -54,8 +54,10 @@ unsigned long long active_interface(void) {
         flags = ifa->ifa_flags;
 
         if (family == AF_INET && (flags&IFF_LOOPBACK) == 0) {
-            res = ((struct sockaddr_in*)ifa->ifa_addr)->sin_addr.s_addr << sizeof(long);
-            res |= ((struct sockaddr_in*)ifa->ifa_netmask)->sin_addr.s_addr;
+            unsigned long addr = ((struct sockaddr_in*)ifa->ifa_addr)->sin_addr.s_addr;
+            unsigned long netmask = ((struct sockaddr_in*)ifa->ifa_netmask)->sin_addr.s_addr;
+            res.addr = addr;
+            res.mask = netmask;
         }
     }
     freeifaddrs(ifaddr);
@@ -63,33 +65,29 @@ unsigned long long active_interface(void) {
 }
 
 int socket_search(void) {
-    unsigned long long iflong = active_interface();
-    unsigned long laddr = iflong >> 32, naddr = (unsigned long)iflong;
-    laddr &= naddr;
+    struct addr_mask iflong = active_interface();
+    unsigned long laddr = htonl(iflong.addr);
+    unsigned long naddr = htonl(iflong.mask);
+    unsigned long lanaddr = laddr & naddr;
     unsigned int n = 0;
-    while (((naddr >> n)&1 == 0) && (n <= 32)) {
+    while ((((naddr >> n)&1) == 0) && (n <= 32)) {
         n++;
     }
-
     char addr[INET_ADDRSTRLEN];
     int sockfd;
     char str[6];
     for (int i = 0; i < (1<<n); i++) {
-        struct in_addr nladdr = {laddr+i};
+        if (lanaddr+i == laddr) continue;
+        struct in_addr nladdr = {ntohl(lanaddr+i)};
         inet_ntop(AF_INET, &(nladdr), addr, INET_ADDRSTRLEN);
-
-        if ((sockfd = setup_socket()) < 0) {
-            fprintf(stderr, "setup_socket: unable to create socket\n");
-            return 2;
-        }
-        if (socket_connect(sockfd, addr) == false) {
-            continue;
-        }
-        memset(str, 0, 6 * sizeof(char));
-        send(sockfd, ping, 6, 0);
-        recv(sockfd, str, 6, 0);
-        if (strcmp(str, pong) == 0) {
-            return sockfd;
+        sockfd = setup_socket();
+        if (socket_connect(sockfd, addr) == true) {
+            memset(str, 0, 6 * sizeof(char));
+            send(sockfd, ping, 6, 0);
+            recv(sockfd, str, 6, 0);
+            if (strcmp(str, pong) == 0) {
+                return sockfd;
+            }
         }
         close(sockfd);
     }
