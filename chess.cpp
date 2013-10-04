@@ -24,6 +24,7 @@ void clear_square(char index);
 char can_capture(Move m);
 char distance(char start, char end);
 char same_color(char start, char end);
+char clear_path(Move m);
 
 int init_board(){
     // pawns-black
@@ -94,20 +95,18 @@ char check_legal(Move m){
             can_capture(m);
     }
     if(type & BISHOP){
-        return (result | ((m.start - m.end) % 7 == 0) || 
-            ((m.start - m.end) % 9 == 0)) && can_capture(m) && 
-            same_color(m.start, m.end);
+        result = result || (((m.start - m.end) % 7 == 0) || 
+            ((m.start - m.end) % 9 == 0)) && same_color(m.start, m.end);
     }else if(type & KNIGHT){
-        return distance(m.start, m.end) == 5 && can_capture(m);
+        result = distance(m.start, m.end) == 5;
     }else if(type & PAWN){
         return 1;
     }else if(type & KING){
         char d = distance(m.start, m.end);
-        return (d == 1 || d == 2) && can_capture(m);
+        result = (d == 1 || d == 2);
         
-    }else{
-        return result;
     }
+    return result && can_capture(m) && clear_path(m);
 }
 
 char same_color(char start, char end){
@@ -127,6 +126,28 @@ char can_capture(Move m){
         board[m.end].type) & BLACK);
     //return (!board[m.end].type) || board[m.start].color != board[m.end].color;
     
+}
+
+char clear_path(Move m){
+    char step;
+    // possible steps 7, 8, 9, 1
+    if((m.end - m.start) % 7 == 0){
+        step = m.end - m.start < 0 ? -7 : 7;
+    }else if((m.end - m.start) % 8 == 0){
+        step = m.end - m.start < 0 ? -8 : 8;
+    }else if((m.end - m.start) % 9 == 0){
+        step = m.end - m.start < 0 ? -9 : 9;
+    }else if(m.end / 8 == m.start / 8){
+        step = m.end - m.start < 0 ? -1 : 1;
+    }else{
+        return 1;
+    }
+    for(char square = m.start + step; square != m.end; square += step){
+        if(board[square].type){
+            return 0;
+        }
+    }
+    return 1;
 }
 
 char move(char* move_string, int str_length){
