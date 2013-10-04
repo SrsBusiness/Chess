@@ -125,7 +125,6 @@ char can_capture(Move m){
     return !board[m.end].type || ((board[m.start].type ^ 
         board[m.end].type) & BLACK);
     //return (!board[m.end].type) || board[m.start].color != board[m.end].color;
-    
 }
 
 char clear_path(Move m){
