@@ -6,8 +6,8 @@
 #include "chess.h"
 
 // Color
-#define COLOR_LIGHTGRAY 20
-#define COLOR_DARKBLUE 21
+#define COLOR_LIGHTGRAY 21
+#define COLOR_DARKBLUE 20
 
 // Panel sizes
 #define BOARD_SIZE 12
@@ -61,12 +61,14 @@ int main(){
     doupdate();
     char str[80];
     while(true){
+        mvwprintw(commandline_win, lines - (BOARD_SIZE + 
+            (lines - BOARD_SIZE) / 4) - 3, 0, ">>> ");
         mvwgetstr(commandline_win, lines - (BOARD_SIZE + 
-            (lines - BOARD_SIZE) / 4) - 3, 0, str);
+            (lines - BOARD_SIZE) / 4) - 3, 4, str);
         int len = 0;
         while(*(str + len) != 0)
             len++;
-        wprintw(commandline_win, "%d\n", len);
+        
         if(!move(str, len))
             show_board(board_win);
     }
@@ -88,6 +90,11 @@ void show_board(WINDOW* win){
                     (board[i].color == COLOR_WHITE)));
         mvwprintw(win, i / 8 + 2, 2 * (i % 8) + 4, "%s ", 
                 (char*)&(board[i].icon));
+        /*init_pair(1, board[i].type & BLACK ? COLOR_BLACK : COLOR_WHITE,
+                (i / 8 + i % 8 + 1) % 2 + 20);
+        mvwprintw(win, i / 8 + 2, 2 * (i % 8) + 4, "%s ", 
+                (char*)&(board[i].icon));
+        */
     }
     wattron(win, COLOR_PAIR(5));
     for(int i = 0; i < 8; i++){
