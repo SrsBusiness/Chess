@@ -35,8 +35,8 @@ int host = 0;
 int sockfd, connfd;
 
 int main(int argc, char *argv[]){
-    if (argc == 2) {
-        if (strcmp(argv[1],"-m") == 0) {
+    if (argc >= 2) {
+        if ((strcmp(argv[1],"-s") == 0) || (strcmp(argv[1],"--search") == 0)) {
             multiplayer = true;
             printf("searching for a game...\n");
             if ((sockfd = socket_search()) == -1) {
@@ -53,6 +53,16 @@ int main(int argc, char *argv[]){
                 connfd = sockfd;
                 printf("we connected to someone!\n");
             }
+        } else if (strcmp(argv[1],"--host") == 0) {
+            printf("let's be the host\n");
+            multiplayer = true;
+            host = 1;
+            sockfd = setup_socket();
+            if (socket_bind(sockfd) == false) {
+                fprintf(stderr, "socket_bind: unable to bind to port\n");
+                return 2;
+            }
+            connfd = accept_connection(sockfd);
         }
     }
 
