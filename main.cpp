@@ -38,6 +38,7 @@ int main(int argc, char *argv[]){
     if (argc == 2) {
         if (strcmp(argv[1],"-m") == 0) {
             multiplayer = true;
+            printf("searching for a game...\n");
             if ((sockfd = socket_search()) == -1) {
                 printf("let's be the host\n");
                 host = 1;
@@ -69,7 +70,6 @@ int main(int argc, char *argv[]){
         }
     }
 
-    return 0;
     setlocale(LC_ALL, ""); 
     init_board();
     initscr();
