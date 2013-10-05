@@ -39,7 +39,7 @@ int main(int argc, char *argv[]){
         if (strcmp(argv[1],"-m") == 0) {
             multiplayer = true;
             if ((sockfd = socket_search()) == -1) {
-                printf("let's be the host");
+                printf("let's be the host\n");
                 host = 1;
                 sockfd = setup_socket();
                 if (socket_bind(sockfd) == false) {

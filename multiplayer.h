@@ -12,7 +12,7 @@ struct addr_mask {
 };
 
 int setup_socket(void);
-bool socket_connect(int sockfd, char addr[]);
+bool socket_connect(int sockfd, char addr[], int usec);
 bool socket_bind(int sockfd);
 struct addr_mask active_interface(void);
 int socket_search(void);

@@ -1,5 +1,7 @@
 #include "multiplayer.h"
 #include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -81,7 +83,7 @@ int socket_search(void) {
         struct in_addr nladdr = {ntohl(lanaddr+i)};
         inet_ntop(AF_INET, &(nladdr), addr, INET_ADDRSTRLEN);
         sockfd = setup_socket();
-        if (socket_connect(sockfd, addr) == true) {
+        if (socket_connect(sockfd, addr, 100000) == true) {
             memset(str, 0, 6 * sizeof(char));
             send(sockfd, ping, 6, 0);
             recv(sockfd, str, 6, 0);
@@ -94,11 +96,44 @@ int socket_search(void) {
     return -1;
 }
 
-bool socket_connect(int sockfd, char addr[]) {
+bool socket_connect(int sockfd, char addr[], int usecs) {
+    int n, error, flags;
+    socklen_t len;
+    fd_set rset, wset;
+    struct timeval tval;
     if (getaddrinfo(addr, LISTENING_PORT, &hints, &res) == -1) {
         return false;
     }
-    if (connect(sockfd, res->ai_addr, res->ai_addrlen) == -1) {
+    flags = fcntl(sockfd, F_GETFL, 0);
+    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+    if ((n = connect(sockfd, res->ai_addr, res->ai_addrlen)) < 0) {
+        if (errno != EINPROGRESS) {
+            return false;
+        }
+    }
+    if (n == 0) {
+        fcntl(sockfd, F_SETFL, O_ASYNC);
+        return true;
+    }
+    FD_ZERO(&rset);
+    FD_SET(sockfd, &rset);
+    wset = rset;
+    tval.tv_sec = 0;
+    tval.tv_usec = usecs;
+    if ((n = select(sockfd+1, &rset, &wset, NULL, &tval)) == 0) {
+        errno = ETIMEDOUT;
+        return false;
+    }
+    if (FD_ISSET(sockfd, &rset) || FD_ISSET(sockfd, &wset)) {
+        len = sizeof(error);
+        if (getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &error, &len) < 0)
+            return false;
+    } else {
+        return false;
+    }
+    fcntl(sockfd, F_SETFL, flags);
+    if (error) {
+        errno = error;
         return false;
     }
     return true;
