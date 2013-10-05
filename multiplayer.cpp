@@ -79,7 +79,6 @@ int socket_search(void) {
     int sockfd;
     char str[6];
     for (int i = 0; i < (1<<n); i++) {
-        if (lanaddr+i == laddr) continue;
         struct in_addr nladdr = {ntohl(lanaddr+i)};
         inet_ntop(AF_INET, &(nladdr), addr, INET_ADDRSTRLEN);
         sockfd = setup_socket();
