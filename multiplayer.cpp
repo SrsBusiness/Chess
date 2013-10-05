@@ -55,11 +55,14 @@ struct addr_mask active_interface(void) {
         family = ifa->ifa_addr->sa_family;
         flags = ifa->ifa_flags;
 
-        if (family == AF_INET && (flags&IFF_LOOPBACK) == 0) {
+        if ((family == AF_INET)
+            && ((flags&IFF_LOOPBACK) == 0)
+            && ((flags&IFF_UP) != 0)) {
             unsigned long addr = ((struct sockaddr_in*)ifa->ifa_addr)->sin_addr.s_addr;
             unsigned long netmask = ((struct sockaddr_in*)ifa->ifa_netmask)->sin_addr.s_addr;
             res.addr = addr;
             res.mask = netmask;
+            break;
         }
     }
     freeifaddrs(ifaddr);
