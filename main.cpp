@@ -7,6 +7,17 @@
 #include "multiplayer.h"
 #include <sys/socket.h>
 
+const char __doc__[] = "Usage:\n\
+    chess\n\
+    chess --host\n\
+    chess --search\n\
+    chess -h | --help\n\
+\n\
+Options:\n\
+    -h --help   display this help screen\n\
+    --host      host a multiplayer game (LAN only)\n\
+    --search    search for a LAN game (if none are found, host a game)";
+
 // Color
 #define COLOR_LIGHTGRAY 21
 #define COLOR_DARKBLUE 20
@@ -36,7 +47,10 @@ int sockfd, connfd;
 
 int main(int argc, char *argv[]){
     if (argc >= 2) {
-        if ((strcmp(argv[1],"-s") == 0) || (strcmp(argv[1],"--search") == 0)) {
+        if ((strcmp(argv[1],"-h") == 0) || (strcmp(argv[1],"--help") == 0)) {
+            printf("%s\n",__doc__);
+            return 0;
+        } else if ((strcmp(argv[1],"-s") == 0) || (strcmp(argv[1],"--search") == 0)) {
             multiplayer = true;
             printf("searching for a game...\n");
             if ((sockfd = socket_search()) == -1) {
@@ -63,6 +77,9 @@ int main(int argc, char *argv[]){
                 return 2;
             }
             connfd = accept_connection(sockfd);
+        } else {
+            printf("%s\n",__doc__);
+            return 0;
         }
     }
 
